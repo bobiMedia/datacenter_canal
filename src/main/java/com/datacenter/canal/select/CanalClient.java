@@ -3,10 +3,10 @@ package com.datacenter.canal.select;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-import com.alibaba.otter.canal.connector.core.consumer.CommonMessage;
-import com.alibaba.otter.canal.connector.core.util.MessageUtil;
 import com.alibaba.otter.canal.protocol.Message;
 import com.datacenter.canal.process.ProcessService;
+import com.datacenter.canal.select.support.EtlMessage;
+import com.datacenter.canal.select.support.EtlMessageUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,8 +56,12 @@ public class CanalClient implements InitializingBean {
                     }
                 } else {
                     // 如果有數據,則轉換資料格式
-                    List<CommonMessage> messages = MessageUtil.convert(message);
-                    processService.queue(messages);
+                    List<EtlMessage> messages = EtlMessageUtil.convert(message);
+
+                    // 假如非 ddl、dml 則無法轉換，且不需處理
+                    if(!messages.isEmpty()) {
+                        processService.queue(messages);
+                    }
                 }
 
                 // 進行 batch id 的確認。確認之後，小於等於此 batchId 的 Message 都會被確認。
