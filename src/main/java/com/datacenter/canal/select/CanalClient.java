@@ -8,8 +8,10 @@ import com.datacenter.canal.process.ProcessService;
 import com.datacenter.canal.select.support.EtlMessage;
 import com.datacenter.canal.select.support.EtlMessageUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.otter.canal.client.CanalConnector;
@@ -21,20 +23,42 @@ public class CanalClient implements InitializingBean {
 
     private final static int BATCH_SIZE = 1000;
 
+    @Value("${canal.hostname}")
+    String hostname;
+
+    @Value("${canal.port}")
+    Integer port;
+
+    @Value("${canal.destination}")
+    String destination;
+
+    @Value("${canal.username}")
+    String username;
+
+    @Value("${canal.password}")
+    String password;
+
+    @Value("${canal.subscribe}")
+    String subscribe;
+
     @Autowired
     ProcessService processService;
 
     @Override
     public void afterPropertiesSet() throws Exception {
         // 創建連接
-        InetSocketAddress socketAddress = new InetSocketAddress("35.186.151.166", 21111);
-        CanalConnector connector = CanalConnectors.newSingleConnector(socketAddress, "example", "", "");
+        InetSocketAddress socketAddress = new InetSocketAddress(hostname, port);
+        CanalConnector connector = CanalConnectors.newSingleConnector(socketAddress, destination, username, password);
 
         try {
             // 打開連接
             connector.connect();
-            // 訂閱所有的表
-            connector.subscribe(".*\\..*");
+
+            // 訂閱表
+            if(!StringUtils.isEmpty(subscribe)) {
+                connector.subscribe(subscribe);
+            }
+
             // 回滾到未進行ack的地方，下次fetch的時候，可以從最後一個沒有ack的地方開始拿
             connector.rollback();
 
@@ -52,14 +76,14 @@ public class CanalClient implements InitializingBean {
                         // 線程休眠2秒
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
-                        log.error("CanalConnector get message error", e);
+                        log.error("CanalConnector thread sleep error", e);
                     }
                 } else {
                     // 如果有數據,則轉換資料格式
                     List<EtlMessage> messages = EtlMessageUtil.convert(message);
 
                     // 假如非 ddl、dml 則無法轉換，且不需處理
-                    if(!messages.isEmpty()) {
+                    if(messages != null && !messages.isEmpty()) {
                         processService.queue(messages);
                     }
                 }
