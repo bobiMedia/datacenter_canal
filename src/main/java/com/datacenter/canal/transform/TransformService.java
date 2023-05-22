@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -20,14 +21,15 @@ public class TransformService {
         Set<String> columnMaskedSet = new HashSet<>();
         columnMaskedSet.add("password");
         messages.stream()
-                .flatMap(message -> message.getData().stream())
+                .flatMap(message -> Stream.concat(message.getData().stream(), message.getOld().stream()))
                 .flatMap(map -> map.values().stream())
                 .map(column -> {
                     if (columnMaskedSet.contains(column.getName())) {
                         column.setValue(columnValMasked("*", column.getValue().toString().length()));
                     }
                     return column;
-                }).collect(Collectors.toList());
+                })
+                .collect(Collectors.toList());
         return messages;
     }
 
