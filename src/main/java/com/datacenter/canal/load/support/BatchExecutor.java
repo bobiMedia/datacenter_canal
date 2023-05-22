@@ -15,11 +15,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class BatchExecutor implements Closeable {
 
-    private DataSource dataSource;
+    private final AtomicInteger idx = new AtomicInteger(0);
+    private final DataSource dataSource;
     private Connection conn;
-    private AtomicInteger idx    = new AtomicInteger(0);
 
-    public BatchExecutor(DataSource dataSource){
+    public BatchExecutor(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -43,17 +43,17 @@ public class BatchExecutor implements Closeable {
     }
 
     public void execute(String sql, List<Map<String, ?>> values) throws SQLException {
-        PreparedStatement pstmt = getConn().prepareStatement(sql);
+        PreparedStatement ps = getConn().prepareStatement(sql);
         int len = values.size();
         for (int i = 0; i < len; i++) {
             int type = (Integer) values.get(i).get("type");
             Object value = values.get(i).get("value");
-            SyncUtil.setPStmt(type, pstmt, value, i + 1);
+            SyncUtil.setPStmt(type, ps, value, i + 1);
         }
 
-        pstmt.execute();
+        ps.execute();
         idx.incrementAndGet();
-        pstmt.close();
+        ps.close();
     }
 
     public void commit() throws SQLException {

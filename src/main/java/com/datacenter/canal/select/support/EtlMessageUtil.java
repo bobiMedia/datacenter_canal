@@ -13,7 +13,7 @@ public class EtlMessageUtil {
             return null;
         }
         List<CanalEntry.Entry> entries = message.getEntries();
-        List<EtlMessage> msgs = new ArrayList<>(entries.size());
+        List<EtlMessage> messages = new ArrayList<>(entries.size());
         for (CanalEntry.Entry entry : entries) {
             if (entry.getEntryType() == CanalEntry.EntryType.TRANSACTIONBEGIN
                     || entry.getEntryType() == CanalEntry.EntryType.TRANSACTIONEND) {
@@ -24,8 +24,7 @@ public class EtlMessageUtil {
             try {
                 rowChange = CanalEntry.RowChange.parseFrom(entry.getStoreValue());
             } catch (Exception e) {
-                throw new RuntimeException("ERROR ## parser of eromanga-event has an error , data:" + entry.toString(),
-                        e);
+                throw new RuntimeException("ERROR ## parser event has an error , data:" + entry, e);
             }
 
             CanalEntry.EventType eventType = rowChange.getEventType();
@@ -39,7 +38,10 @@ public class EtlMessageUtil {
             msg.setIsDdl(rowChange.getIsDdl());
             msg.setTs(System.currentTimeMillis());
             msg.setSql(rowChange.getSql());
-            msgs.add(msg);
+            msg.setLogfileName(entry.getHeader().getLogfileName());
+            msg.setLogfileOffset(entry.getHeader().getLogfileOffset());
+            messages.add(msg);
+
             List<Map<String, EtlColumn>> data = new ArrayList<>();
             List<Map<String, EtlColumn>> old = new ArrayList<>();
 
@@ -78,9 +80,8 @@ public class EtlMessageUtil {
                             updateSet.add(column.getName());
                         }
                     }
-                    if (!row.isEmpty()) {
-                        data.add(row);
-                    }
+
+                    data.add(row);
 
                     if (eventType == CanalEntry.EventType.UPDATE) {
                         Map<String, EtlColumn> rowOld = new LinkedHashMap<>();
@@ -93,24 +94,27 @@ public class EtlMessageUtil {
                                 }
                             }
                         }
-                        // update操作将记录修改前的值
-                        if (!rowOld.isEmpty()) {
-                            old.add(rowOld);
+
+                        // 回填為修改的欄位於 old
+                        for (EtlColumn column : row.values()) {
+                            if(rowOld.get(column.getName()) == null) {
+                                rowOld.put(column.getName(), column);
+                            }
                         }
+
+                        // update操作将记录修改前的值
+                        old.add(rowOld);
                     }
 
                     i++;
                 }
-                if (!data.isEmpty()) {
-                    msg.setData(data);
-                }
-                if (!old.isEmpty()) {
-                    msg.setOld(old);
-                }
+
+                msg.setData(data);
+                msg.setOld(old);
             }
         }
 
-        return msgs;
+        return messages;
     }
 
     private static EtlColumn covertToEtlColumn(CanalEntry.Column entryColumn) {

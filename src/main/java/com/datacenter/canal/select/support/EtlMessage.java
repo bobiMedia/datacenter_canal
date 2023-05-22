@@ -29,4 +29,6 @@ public class EtlMessage  implements Serializable {
     private List<Map<String, EtlColumn>> data;
     // 旧数据列表,用于update,size和data的size一一对应
     private List<Map<String, EtlColumn>> old;
+    private String logfileName;
+    private Long logfileOffset;
 }

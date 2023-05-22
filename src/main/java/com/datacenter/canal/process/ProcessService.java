@@ -24,7 +24,7 @@ public class ProcessService {
     @Autowired
     LoadService loadService;
 
-    public void queue(List<EtlMessage> messages) throws SQLException {
+    public void queue(List<EtlMessage> messages) {
         // TODO 目前直接執行 ETL，預定改為 Queue 管理
         log.debug("do etl process");
         messages = extractService.extract(messages);
