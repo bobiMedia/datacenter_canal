@@ -21,7 +21,8 @@ public class TransformService {
         Set<String> columnMaskedSet = new HashSet<>();
         columnMaskedSet.add("password");
         messages.stream()
-                .flatMap(message -> Stream.concat(message.getData().stream(), message.getOld().stream()))
+//                .flatMap(message -> Stream.concat(message.getData().stream(), message.getOld().stream()))
+                .flatMap(message -> message.getData().stream())
                 .flatMap(map -> map.values().stream())
                 .map(column -> {
                     if (columnMaskedSet.contains(column.getName())) {
