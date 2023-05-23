@@ -1,5 +1,7 @@
 package com.datacenter.canal.load.support;
 
+import com.zaxxer.hikari.HikariDataSource;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.sql.DataSource;
@@ -19,8 +21,12 @@ public class BatchExecutor implements Closeable {
     private final DataSource dataSource;
     private Connection conn;
 
-    public BatchExecutor(DataSource dataSource) {
+    @Getter
+    private String backtick;
+
+    public BatchExecutor(DataSource dataSource) throws SQLException {
         this.dataSource = dataSource;
+        this.backtick = getBacktick(dataSource);
     }
 
     public Connection getConn() {
@@ -83,5 +89,18 @@ public class BatchExecutor implements Closeable {
                 conn = null;
             }
         }
+    }
+
+    /**
+     * 依據資料來源，取得 Backtick
+     */
+    private static String getBacktick(DataSource dataSource) throws SQLException {
+        if(dataSource instanceof HikariDataSource) {
+            HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
+            return SyncUtil.getBacktickByUrl(hikariDataSource.getJdbcUrl());
+        }
+
+        log.warn("Can not detect dataSource type");
+        return "";
     }
 }

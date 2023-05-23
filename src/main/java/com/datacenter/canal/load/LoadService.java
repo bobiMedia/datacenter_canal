@@ -1,15 +1,14 @@
 package com.datacenter.canal.load;
 
-import com.alibaba.druid.pool.DruidDataSource;
 import com.datacenter.canal.load.support.BatchExecutor;
 import com.datacenter.canal.load.support.SqlBuilder;
-import com.datacenter.canal.load.support.SyncUtil;
 import com.datacenter.canal.select.support.EtlColumn;
 import com.datacenter.canal.select.support.EtlMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.*;
@@ -22,13 +21,18 @@ public class LoadService {
     @Autowired
     DataSource dataSource;
 
+    private BatchExecutor batchExecutor;
+
+    @PostConstruct
+    private void init() throws SQLException {
+        this.batchExecutor = new BatchExecutor(dataSource);
+    }
+
     public void load(List<EtlMessage> messages) throws SQLException {
         log.debug("do load process");
 
-        BatchExecutor batchExecutor = new BatchExecutor(dataSource);
-
         for (EtlMessage message : messages) {
-            log.debug("load process for binlog{}-{}: {} table {}", message.getLogfileName(), message.getLogfileOffset(), message.getType(), message.getTable());
+            log.debug("load process for {}-{}: {} table {}", message.getLogfileName(), message.getLogfileOffset(), message.getType(), message.getTable());
 
             // 檢查有無資料
             if (message.getData().isEmpty()) {
@@ -70,10 +74,9 @@ public class LoadService {
     private void insert(BatchExecutor batchExecutor, EtlMessage message) throws SQLException {
         List<String> columnNames = new ArrayList<>(message.getData().get(0).keySet());
         List<Map<String, ?>> values = new ArrayList<>();
-        String backtick = getBacktick();
 
         // 組成 SQL
-        SqlBuilder sql = new SqlBuilder(backtick);
+        SqlBuilder sql = new SqlBuilder(batchExecutor.getBacktick());
         sql.append("INSERT INTO ").appendWithBacktick(message.getTable())
                 .append(" (").appendJoinWithBacktick(",", columnNames).deleteBehind(1) // 插入欄位
                 .append(") VALUES ");
@@ -122,10 +125,9 @@ public class LoadService {
 
         List<EtlColumn> keyColumns = getKeyColumns(keys, old); // 從舊資料取得變更前的欄位數值
         List<Map<String, ?>> values = new ArrayList<>();
-        String backtick = getBacktick();
 
         // 組成 SQL
-        SqlBuilder sql = new SqlBuilder(backtick);
+        SqlBuilder sql = new SqlBuilder(batchExecutor.getBacktick());
         sql.append("UPDATE ").appendWithBacktick(tableName).append(" SET ");
 
         // 僅更新有變動的欄位
@@ -186,12 +188,11 @@ public class LoadService {
      */
     private void delete(BatchExecutor batchExecutor, String tableName, Set<String> keys, Map<String, EtlColumn> data) throws SQLException {
         List<Map<String, ?>> values = new ArrayList<>();
-        String backtick = getBacktick();
 
         List<EtlColumn> keyColumns = getKeyColumns(keys, data); // 取得刪除前的欄位數值
 
         // 組成 SQL
-        SqlBuilder sql = new SqlBuilder(backtick);
+        SqlBuilder sql = new SqlBuilder(batchExecutor.getBacktick());
         sql.append("DELETE FROM ").appendWithBacktick(tableName).append(" WHERE ");
 
         // 使用 PK & 舊資料的數值作為更新條件
@@ -213,10 +214,8 @@ public class LoadService {
      * truncate操作
      */
     private void truncate(BatchExecutor batchExecutor, EtlMessage message) throws SQLException {
-        String backtick = getBacktick();
-
         // 組成 SQL
-        SqlBuilder sql = new SqlBuilder(backtick);
+        SqlBuilder sql = new SqlBuilder(batchExecutor.getBacktick());
         sql.append("TRUNCATE TABLE ").appendWithBacktick(message.getTable());
 
         batchExecutor.execute(sql.toString(), new ArrayList<>());
@@ -224,14 +223,6 @@ public class LoadService {
         if (log.isTraceEnabled()) {
             log.trace("Truncate target table, sql: {}", sql);
         }
-    }
-
-    /**
-     * 依據資料來源，取得 Backtick
-     */
-    private String getBacktick() {
-        DruidDataSource druidDataSource = (DruidDataSource) dataSource;
-        return SyncUtil.getBacktickByDbType(druidDataSource.getDbType());
     }
 
     /**

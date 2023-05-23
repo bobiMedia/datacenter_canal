@@ -1,6 +1,5 @@
 package com.datacenter.canal.load.support;
 
-import com.alibaba.druid.DbType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -16,7 +15,7 @@ import java.util.TimeZone;
 @Slf4j
 public class SyncUtil {
 
-    public final static String  timeZone;    // 当前时区
+    public final static String timeZone;    // 当前时区
     private final static DateTimeZone dateTimeZone;
 
     static {
@@ -39,10 +38,10 @@ public class SyncUtil {
     /**
      * 设置 preparedStatement
      *
-     * @param type sqlType
-     * @param ps 需要设置的preparedStatement
+     * @param type  sqlType
+     * @param ps    需要设置的preparedStatement
      * @param value 值
-     * @param i 索引号
+     * @param i     索引号
      */
     public static void setPStmt(int type, PreparedStatement ps, Object value, int i) throws SQLException {
         switch (type) {
@@ -240,29 +239,25 @@ public class SyncUtil {
         }
     }
 
-    /**
-     * 根据DbType返回反引号或空字符串
-     *
-     * @param dbTypeName DbType名称
-     * @return 反引号或空字符串
-     */
-    public static String getBacktickByDbType(String dbTypeName) {
-        DbType dbType = DbType.of(dbTypeName);
-        if (dbType == null) {
-            dbType = DbType.other;
+    public static String getBacktickByUrl(String url) throws SQLException {
+        String[] tokens = url.split(":");
+
+        if (tokens.length < 2) {
+            throw new SQLException("wrong format of jdbc");
         }
 
-        // 只有当dbType为MySQL/MariaDB或OceanBase时返回反引号
-        switch (dbType) {
-            case mysql:
-            case mariadb:
-            case oceanbase:
-                return "`";
-            case postgresql:
-                return "\"";
-            default:
-                return "";
+        if ("mysql".equalsIgnoreCase(tokens[1]) ||
+                "mariadb".equalsIgnoreCase(tokens[1]) ||
+                "oceanbase".equalsIgnoreCase(tokens[1])) {
+            return "`";
         }
+
+        if ("postgresql".equalsIgnoreCase(tokens[1]) ||
+                "redshift".equalsIgnoreCase(tokens[1])) {
+            return "\"";
+        }
+
+        return "";
     }
 
     /**

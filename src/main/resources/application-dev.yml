@@ -10,5 +10,5 @@ spring:
   datasource:
     username: root
     password: oh_my_ody!
-    url: jdbc:mysql://127.0.0.1:13306/canal_target
+    jdbc-url: jdbc:mysql://127.0.0.1:13306/canal_target
     driver-class-name: com.mysql.cj.jdbc.Driver
