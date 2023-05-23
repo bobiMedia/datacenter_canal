@@ -8,7 +8,7 @@ canal:
 
 spring:
   datasource:
-    username: root
-    password: oh_my_ody!
-    url: jdbc:mysql://35.186.151.166:3306/canal_target
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: awsuser111
+    password: Awsuser111Awsuser111Awsuser111
+    jdbc-url: jdbc:redshift://10.5.52.215:5439/dev
+    driver-class-name: com.amazon.redshift.jdbc.Driver
