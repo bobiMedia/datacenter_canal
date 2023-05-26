@@ -16,6 +16,11 @@ public class SqlBuilder {
         this.builder = new StringBuilder();
     }
 
+    public SqlBuilder(String sql, String backtick) {
+        this.backtick = backtick;
+        this.builder = new StringBuilder(sql);
+    }
+
     public SqlBuilder append(String str) {
         builder.append(str);
         return this;
@@ -34,7 +39,7 @@ public class SqlBuilder {
      * 重複插入
      */
     public SqlBuilder appendRepeat(int count, String str) {
-        IntStream.range(0, count).forEach(i-> builder.append(str));
+        IntStream.range(0, count).forEach(i -> builder.append(str));
         return this;
     }
 

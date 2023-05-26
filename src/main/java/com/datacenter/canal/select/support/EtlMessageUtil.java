@@ -6,6 +6,9 @@ import com.alibaba.otter.canal.protocol.Message;
 
 import java.util.*;
 
+/**
+ * modified from canal-connect
+ */
 public class EtlMessageUtil {
 
     public static List<EtlMessage> convert(Message message) {
@@ -97,9 +100,7 @@ public class EtlMessageUtil {
 
                         // 回填為修改的欄位於 old
                         for (EtlColumn column : row.values()) {
-                            if(rowOld.get(column.getName()) == null) {
-                                rowOld.put(column.getName(), column);
-                            }
+                            rowOld.putIfAbsent(column.getName(), column);
                         }
 
                         // update操作将记录修改前的值

@@ -55,7 +55,7 @@ public class CanalClient implements InitializingBean {
             connector.connect();
 
             // 訂閱表
-            if(!StringUtils.isEmpty(subscribe)) {
+            if (!StringUtils.isEmpty(subscribe)) {
                 connector.subscribe(subscribe);
             }
 
@@ -83,8 +83,14 @@ public class CanalClient implements InitializingBean {
                     List<EtlMessage> messages = EtlMessageUtil.convert(message);
 
                     // 假如非 ddl、dml 則無法轉換，且不需處理
-                    if(messages != null && !messages.isEmpty()) {
+                    if (messages != null && !messages.isEmpty()) {
+                        EtlMessage firstMsg = messages.get(0);
+                        EtlMessage lastMsg = messages.get(messages.size() - 1);
+
+                        log.info("elt start for batch: {}, range {}:{} - {}:{}", batchId, firstMsg.getLogfileName(),
+                                firstMsg.getLogfileOffset(), lastMsg.getLogfileName(), lastMsg.getLogfileOffset());
                         processService.queue(messages);
+                        log.info("elt end for batch: {}", batchId);
                     }
                 }
 

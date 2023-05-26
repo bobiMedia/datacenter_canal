@@ -2,6 +2,9 @@ package com.datacenter.canal.select.support;
 
 import lombok.*;
 
+/**
+ * modified from canal-connect
+ */
 @Getter
 @Setter
 @Builder

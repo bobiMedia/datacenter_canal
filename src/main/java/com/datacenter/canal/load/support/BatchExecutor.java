@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * modified from canal-adapter
+ */
 @Slf4j
 public class BatchExecutor implements Closeable {
 
@@ -22,7 +25,7 @@ public class BatchExecutor implements Closeable {
     private Connection conn;
 
     @Getter
-    private String backtick;
+    private final String backtick;
 
     public BatchExecutor(DataSource dataSource) throws SQLException {
         this.dataSource = dataSource;
@@ -57,9 +60,31 @@ public class BatchExecutor implements Closeable {
             SyncUtil.setPStmt(type, ps, value, i + 1);
         }
 
+        log.trace("start execute");
         ps.execute();
         idx.incrementAndGet();
         ps.close();
+        log.trace("end execute");
+    }
+
+    public void executeBatch(String sql, List<List<Map<String, ?>>> batchValues) throws SQLException {
+        PreparedStatement ps = getConn().prepareStatement(sql);
+        int len = batchValues.get(0).size();
+
+        for (List<Map<String, ?>> values : batchValues) {
+            for (int i = 0; i < len; i++) {
+                int type = (Integer) values.get(i).get("type");
+                Object value = values.get(i).get("value");
+                SyncUtil.setPStmt(type, ps, value, i + 1);
+            }
+            ps.addBatch();
+        }
+
+        log.trace("start executeBatch, size: {}", batchValues.size());
+        ps.executeBatch();
+        idx.incrementAndGet();
+        ps.close();
+        log.trace("end executeBatch, size: {}", batchValues.size());
     }
 
     public void commit() throws SQLException {
@@ -95,7 +120,7 @@ public class BatchExecutor implements Closeable {
      * 依據資料來源，取得 Backtick
      */
     private static String getBacktick(DataSource dataSource) throws SQLException {
-        if(dataSource instanceof HikariDataSource) {
+        if (dataSource instanceof HikariDataSource) {
             HikariDataSource hikariDataSource = (HikariDataSource) dataSource;
             return SyncUtil.getBacktickByUrl(hikariDataSource.getJdbcUrl());
         }

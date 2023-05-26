@@ -10,8 +10,12 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.Set;
 import java.util.TimeZone;
 
+/**
+ * modified from canal-adapter
+ */
 @Slf4j
 public class SyncUtil {
 
@@ -282,5 +286,13 @@ public class SyncUtil {
         DateTime dateTime = new DateTime(datetimeStr, dateTimeZone);
 
         return dateTime.toDate();
+    }
+
+    /**
+     * 合併 Set 集合
+     */
+    public static <T> Set<T> mergeSet(Set<T> a, Set<T> b) {
+        a.addAll(b);
+        return a;
     }
 }
