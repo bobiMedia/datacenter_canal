@@ -1,7 +1,7 @@
 canal:
   hostname: 35.186.151.166
   port: 21111
-  destination: example
+  destination: canal-source
   username:
   password:
   subscribe: canal_source..*
@@ -10,5 +10,5 @@ spring:
   datasource:
     username: awsuser111
     password: Awsuser111Awsuser111Awsuser111
-    jdbc-url: jdbc:redshift://10.5.52.215:5439/dev
+    jdbc-url: jdbc:redshift://10.5.8.90:5439/dev
     driver-class-name: com.amazon.redshift.jdbc.Driver

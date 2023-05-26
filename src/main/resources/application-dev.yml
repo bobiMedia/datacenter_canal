@@ -1,7 +1,7 @@
 canal:
   hostname: 35.186.151.166
   port: 21111
-  destination: example
+  destination: canal-source
   username:
   password:
   subscribe: canal_source..*
