@@ -1,0 +1,14 @@
+canal:
+  hostname: 127.0.0.1
+  port: 11111
+  destination: canal-source
+  username:
+  password:
+  subscribe: canal_source..*
+
+spring:
+  datasource:
+    username: awsuser111
+    password: Awsuser111Awsuser111Awsuser111
+    jdbc-url: jdbc:redshift://redshift-cluster-1.ci817qdxya13.ap-southeast-1.redshift.amazonaws.com:5439/dev
+    driver-class-name: com.amazon.redshift.jdbc.Driver
