@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  etl-service:
+    image: picoded/ubuntu-openjdk-8-jdk:16.04
+    volumes:
+      - ./opt:/opt
+      - ./env:/env
+    command: /bin/bash -c "java -jar /opt/canal-0.0.1-SNAPSHOT.jar --spring.config.location=/env/application-aws.yml"
+networks:
+  canal-cluster-net:
+    external:
+      name: canal-cluster-net
