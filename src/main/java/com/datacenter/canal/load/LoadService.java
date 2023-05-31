@@ -9,6 +9,7 @@ import com.datacenter.canal.select.support.EtlMessage;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -28,6 +29,9 @@ public class LoadService {
 
     @Autowired
     DataSource dataSource;
+
+    @Value("${canal.target.suffix:}")
+    String tableSuffix;
 
     private BatchExecutor batchExecutor;
 
@@ -74,6 +78,10 @@ public class LoadService {
             if (dmlList.size() > 0) {
                 String table = messages.get(0).getTable();
                 List<String> pkNames = messages.get(0).getPkNames();
+
+                if(!tableSuffix.isEmpty()) {
+                    table += tableSuffix;
+                }
 
                 // 依據事件類型執行不同的 SQL
                 switch (dmlList.get(0).getType()) {
