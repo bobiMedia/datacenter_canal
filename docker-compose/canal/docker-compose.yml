@@ -1,0 +1,53 @@
+version: '3.3'
+services:
+  zookeeper:
+    image: zookeeper:3.8.1
+    ports: 
+      - 12181:2181
+    volumes:
+      - ./zookeeper/data:/data
+  mysql-admin:
+    image: mysql:8.0
+    ports:
+      - 13306:3306
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/config:/etc/mysql/conf.d
+    environment:
+      MYSQL_ROOT_PASSWORD: oh_my_ody!
+  canal-admin:
+    image: canal/canal-admin:v1.1.6
+    ports:
+      - 18089:8089
+    volumes:
+      - ./canal-admin/logs:/home/admin/canal-admin/logs
+    environment:
+      server.port: 8089
+      canal.adminUser: admin
+      canal.adminPasswd: admin
+      spring.datasource.address: mysql-admin
+      spring.datasource.database: canal_manager
+      spring.datasource.username: root
+      spring.datasource.password: oh_my_ody!
+      spring.datasource.url: jdbc:mysql://mysql-admin/canal_manager?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    depends_on:
+      - mysql-admin
+  canal-server-1:
+    image: canal/canal-server:v1.1.6
+    volumes:
+      - ./canal-server-1/logs:/home/admin/canal-server/logs
+    environment:
+      canal.register.ip: canal-server-1
+      canal.admin.manager: canal-admin:8089
+      canal.admin.port: 11110
+      canal.admin.user: admin
+      canal.admin.passwd: 4ACFE3202A5FF5CF467898FC58AAB1D615029441
+      canal.admin.register.auto: "true"
+      canal.admin.register.cluster: canal-cluster-1
+      canal.admin.register.name: canal-server-1
+    depends_on:
+      - canal-admin
+networks:
+  canal-cluster-net:
+    external:
+      name: canal-cluster-net
