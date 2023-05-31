@@ -1,10 +1,12 @@
 canal:
-  hostname: 127.0.0.1
+  hostname: canal-server-1
   port: 11111
-  destination: canal-source
+  destination: user
   username:
   password:
-  subscribe: canal_source..*
+  subscribe: source..*
+  target:
+    suffix: _canal
 
 spring:
   datasource:
